@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Odds Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        input {
+            width: 50px;
+            text-transform: uppercase;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .results {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Poker Odds Calculator</h2>
+
+    <div>
+        <h3>Player 1 Hand</h3>
+        <input type="text" id="p1c1" placeholder="AH">
+        <input type="text" id="p1c2" placeholder="KH">
+    </div>
+
+    <div>
+        <h3>Player 2 Hand</h3>
+        <input type="text" id="p2c1" placeholder="QC">
+        <input type="text" id="p2c2" placeholder="JD">
+    </div>
+
+    <div>
+        <h3>Community Cards (Optional)</h3>
+        <input type="text" id="com1" placeholder="2D">
+        <input type="text" id="com2" placeholder="5S">
+        <input type="text" id="com3" placeholder="7H">
+        <input type="text" id="com4" placeholder="">
+        <input type="text" id="com5" placeholder="">
+    </div>
+
+    <button onclick="calculateOdds()">Calculate Odds</button>
+
+    <div class="results">
+        <p id="result"></p>
+    </div>
+
+    <script>
+        class PokerOddsCalculator {
+            constructor(numSimulations = 10000) {
+                this.numSimulations = numSimulations;
+                this.deck = this.generateDeck();
+            }
+
+            generateDeck() {
+                const suits = ['H', 'D', 'C', 'S'];
+                const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+                let deck = [];
+                for (let suit of suits) {
+                    for (let rank of ranks) {
+                        deck.push(rank + suit);
+                    }
+                }
+                return deck;
+            }
+
+            removeCards(deck, cards) {
+                return deck.filter(card => !cards.includes(card));
+            }
+
+            dealCommunityCards(deck, num) {
+                let communityCards = [];
+                for (let i = 0; i < num; i++) {
+                    let index = Math.floor(Math.random() * deck.length);
+                    communityCards.push(deck.splice(index, 1)[0]);
+                }
+                return communityCards;
+            }
+
+            evaluateHand(hand, communityCards) {
+                return Math.max(...hand.concat(communityCards).map(card => this.rankValue(card[0])));
+            }
+
+            rankValue(rank) {
+                const values = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, 'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14 };
+                return values[rank];
+            }
+
+            simulateOdds(playerHands, communityCards = []) {
+                let wins = new Array(playerHands.length).fill(0);
+
+                for (let i = 0; i < this.numSimulations; i++) {
+                    let deckCopy = this.removeCards([...this.deck], playerHands.flat().concat(communityCards));
+                    let simCommunityCards = communityCards.length < 5 ? this.dealCommunityCards(deckCopy, 5 - communityCards.length) : communityCards;
+                    let handStrengths = playerHands.map(hand => this.evaluateHand(hand, simCommunityCards));
+
+                    let maxStrength = Math.max(...handStrengths);
+                    let winners = handStrengths.map((strength, index) => strength === maxStrength ? index : -1).filter(index => index !== -1);
+                    winners.forEach(index => wins[index]++);
+                }
+
+                return wins.map(wins => (wins / this.numSimulations) * 100);
+            }
+        }
+
+        function calculateOdds() {
+            let p1Hand = [document.getElementById("p1c1").value.toUpperCase(), document.getElementById("p1c2").value.toUpperCase()];
+            let p2Hand = [document.getElementById("p2c1").value.toUpperCase(), document.getElementById("p2c2").value.toUpperCase()];
+
+            let communityCards = [
+                document.getElementById("com1").value.toUpperCase(),
+                document.getElementById("com2").value.toUpperCase(),
+                document.getElementById("com3").value.toUpperCase(),
+                document.getElementById("com4").value.toUpperCase(),
+                document.getElementById("com5").value.toUpperCase()
+            ].filter(card => card !== ""); // remove empty values
+
+            if (p1Hand.includes("") || p2Hand.includes("")) {
+                document.getElementById("result").innerText = "Please enter valid hands for both players.";
+                return;
+            }
+
+            let pokerSim = new PokerOddsCalculator();
+            let odds = pokerSim.simulateOdds([p1Hand, p2Hand], communityCards);
+
+            document.getElementById("result").innerText = `Player 1 Win %: ${odds[0].toFixed(2)}% | Player 2 Win %: ${odds[1].toFixed(2)}%`;
+        }
+    </script>
+
+</body>
+</html>
