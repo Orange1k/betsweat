@@ -27,10 +27,15 @@
             margin-bottom: 20px;
         }
         .card-grid {
-            display: grid;
-            grid-template-columns: repeat(13, 1fr);
+            display: flex;
+            flex-direction: column;
             gap: 5px;
             margin-bottom: 20px;
+        }
+        .card-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
         }
         .card {
             width: 50px;
@@ -51,6 +56,17 @@
         .card.selected {
             background-color: gray;
             color: white;
+        }
+        .selected-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        .selected-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
         }
         .controls {
             margin-bottom: 20px;
@@ -80,7 +96,11 @@
             Click 'Run Odds' to calculate odds.
         </div>
         <div class="status">
-            <div>Selected Cards: <span id="selected-cards">None</span></div>
+            <div>Selected Cards:</div>
+            <div class="selected-cards">
+                <div class="selected-row" id="hole-cards"></div>
+                <div class="selected-row" id="community-cards"></div>
+            </div>
             <div>Folded: <span id="fold-count">0</span> | Opponents in: <span id="opponents-in">8</span></div>
         </div>
         <div class="card-grid" id="card-grid"></div>
@@ -107,7 +127,7 @@
         function generateDeck() {
             const suits = ['H', 'D', 'C', 'S'];
             const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
-            return ranks.flatMap(rank => suits.map(suit => rank + suit));
+            return suits.flatMap(suit => ranks.map(rank => rank + suit));
         }
 
         // Convert card string to display format (e.g., "AH" -> "A♥")
@@ -132,14 +152,25 @@
                 }
                 selectedCards.push(card); // Select
             }
-            updateSelectedLabel();
+            updateSelectedCardsDisplay();
             renderCards();
         }
 
-        // Update the selected cards label
-        function updateSelectedLabel() {
-            const selectedCardsDisplay = selectedCards.length ? selectedCards.map(cardDisplay).join(', ') : 'None';
-            document.getElementById('selected-cards').textContent = selectedCardsDisplay;
+        // Update the selected cards display
+        function updateSelectedCardsDisplay() {
+            const holeCards = selectedCards.slice(0, 2);
+            const communityCards = selectedCards.slice(2);
+
+            const holeCardsDisplay = holeCards.map(card => `
+                <div class="card ${getFgColor(card)} selected">${cardDisplay(card)}</div>
+            `).join('');
+
+            const communityCardsDisplay = communityCards.map(card => `
+                <div class="card ${getFgColor(card)} selected">${cardDisplay(card)}</div>
+            `).join('');
+
+            document.getElementById('hole-cards').innerHTML = holeCardsDisplay;
+            document.getElementById('community-cards').innerHTML = communityCardsDisplay;
         }
 
         // Increase fold count
@@ -168,7 +199,7 @@
         function resetSelection() {
             selectedCards = [];
             foldCount = 0;
-            updateSelectedLabel();
+            updateSelectedCardsDisplay();
             updateFoldLabel();
             renderCards();
             document.getElementById('results').textContent = "Odds: Not calculated yet";
@@ -199,10 +230,11 @@
         function simulateOdds(holeCards, communityCards, deck, numOpponents) {
             let wins = 0, ties = 0, losses = 0;
             for (let i = 0; i < SIMULATIONS; i++) {
-                // Placeholder logic
-                wins += Math.random() > 0.5 ? 1 : 0;
-                ties += Math.random() > 0.1 ? 1 : 0;
-                losses += Math.random() > 0.4 ? 1 : 0;
+                // Placeholder logic (replace with actual poker hand evaluation)
+                const random = Math.random();
+                if (random < 0.6) wins++;
+                else if (random < 0.65) ties++;
+                else losses++;
             }
             return { wins, ties, losses };
         }
@@ -211,12 +243,18 @@
         function renderCards() {
             const cardGrid = document.getElementById('card-grid');
             cardGrid.innerHTML = '';
-            FULL_DECK.forEach(card => {
-                const cardElement = document.createElement('div');
-                cardElement.className = `card ${getFgColor(card)} ${selectedCards.includes(card) ? 'selected' : ''}`;
-                cardElement.textContent = cardDisplay(card);
-                cardElement.onclick = () => toggleCard(card);
-                cardGrid.appendChild(cardElement);
+            const suits = ['H', 'D', 'C', 'S'];
+            suits.forEach(suit => {
+                const row = document.createElement('div');
+                row.className = 'card-row';
+                FULL_DECK.filter(card => card[1] === suit).forEach(card => {
+                    const cardElement = document.createElement('div');
+                    cardElement.className = `card ${getFgColor(card)} ${selectedCards.includes(card) ? 'selected' : ''}`;
+                    cardElement.textContent = cardDisplay(card);
+                    cardElement.onclick = () => toggleCard(card);
+                    row.appendChild(cardElement);
+                });
+                cardGrid.appendChild(row);
             });
         }
 
