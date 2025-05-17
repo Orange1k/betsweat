@@ -16,12 +16,29 @@
     }
     #results {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
       font-size: 1.2rem;
     }
-    #playerCount {
+    .section {
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .card-slot {
+      display: inline-block;
+      margin: 0.2rem;
+      padding: 0.5rem;
+      min-width: 45px;
+      height: 65px;
+      border: 2px solid #555;
+      border-radius: 6px;
+      background: #222;
       font-size: 1rem;
-      padding: 0.4rem;
+      color: white;
+      vertical-align: middle;
+    }
+    .card-slot.filled {
+      background: #666;
+      border-color: white;
     }
     .card-grid {
       display: grid;
@@ -45,6 +62,23 @@
     }
     .hearts, .diamonds { color: #ff4d4d; }
     .clubs, .spades { color: #4df0ff; }
+
+    .counter-controls {
+      margin-top: 0.5rem;
+    }
+    .counter-btn {
+      padding: 0.4rem 0.8rem;
+      margin: 0 0.3rem;
+      font-size: 1rem;
+      background: #444;
+      color: white;
+      border: 2px solid white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .counter-btn:hover {
+      background: olive;
+    }
   </style>
 </head>
 <body>
@@ -52,19 +86,31 @@
 <h1>Poker Odds Calculator</h1>
 
 <div id="results">
-  Select 2 cards to begin. <br>
-  Players: 
-  <select id="playerCount" onchange="calculateOdds()">
-    <option value="1">1 opponent</option>
-    <option value="2" selected>2 opponents</option>
-    <option value="3">3 opponents</option>
-    <option value="4">4 opponents</option>
-    <option value="5">5 opponents</option>
-    <option value="6">6 opponents</option>
-    <option value="7">7 opponents</option>
-    <option value="8">8 opponents</option>
-  </select><br><br>
-  <span id="oddsText">Waiting for input...</span>
+  <span id="oddsText">Waiting for input...</span><br><br>
+  Players: <span id="playerCountDisplay">8</span>
+  <div class="counter-controls">
+    <button class="counter-btn" onclick="changePlayerCount(1)">▲</button>
+    <button class="counter-btn" onclick="changePlayerCount(-1)">▼</button>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Your Cards</h3>
+  <div id="yourCards">
+    <div class="card-slot" id="your1"></div>
+    <div class="card-slot" id="your2"></div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Community Cards</h3>
+  <div id="communityCards">
+    <div class="card-slot" id="comm1"></div>
+    <div class="card-slot" id="comm2"></div>
+    <div class="card-slot" id="comm3"></div>
+    <div class="card-slot" id="comm4"></div>
+    <div class="card-slot" id="comm5"></div>
+  </div>
 </div>
 
 <div class="card-grid" id="cardGrid"></div>
@@ -74,9 +120,11 @@ const suits = ["♠", "♥", "♦", "♣"];
 const suitClass = ["spades", "hearts", "diamonds", "clubs"];
 const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
 let selectedCards = [];
+let playerCount = 8;
 
 const cardGrid = document.getElementById("cardGrid");
 const oddsText = document.getElementById("oddsText");
+const playerCountDisplay = document.getElementById("playerCountDisplay");
 
 function renderDeck() {
   cardGrid.innerHTML = "";
@@ -88,6 +136,9 @@ function renderDeck() {
       div.textContent = card;
       div.dataset.card = rank + ["s", "h", "d", "c"][s];
       div.onclick = () => toggleCard(div.dataset.card, div);
+      if (selectedCards.includes(div.dataset.card)) {
+        div.classList.add("selected");
+      }
       cardGrid.appendChild(div);
     });
   });
@@ -96,11 +147,55 @@ function renderDeck() {
 function toggleCard(card, element) {
   if (selectedCards.includes(card)) {
     selectedCards = selectedCards.filter(c => c !== card);
-    element.classList.remove("selected");
   } else if (selectedCards.length < 7) {
     selectedCards.push(card);
-    element.classList.add("selected");
   }
+  updateVisuals();
+  calculateOdds();
+}
+
+function updateVisuals() {
+  renderDeck();
+  const your1 = document.getElementById("your1");
+  const your2 = document.getElementById("your2");
+  const comm = [
+    document.getElementById("comm1"),
+    document.getElementById("comm2"),
+    document.getElementById("comm3"),
+    document.getElementById("comm4"),
+    document.getElementById("comm5"),
+  ];
+
+  [your1, your2].forEach((el, i) => {
+    if (selectedCards[i]) {
+      el.textContent = formatCard(selectedCards[i]);
+      el.classList.add("filled");
+    } else {
+      el.textContent = "";
+      el.classList.remove("filled");
+    }
+  });
+
+  comm.forEach((el, i) => {
+    if (selectedCards[i + 2]) {
+      el.textContent = formatCard(selectedCards[i + 2]);
+      el.classList.add("filled");
+    } else {
+      el.textContent = "";
+      el.classList.remove("filled");
+    }
+  });
+}
+
+function formatCard(c) {
+  const rank = c.slice(0, -1);
+  const suit = { s: "♠", h: "♥", d: "♦", c: "♣" }[c.slice(-1)];
+  return rank + suit;
+}
+
+function changePlayerCount(delta) {
+  playerCount = Math.min(8, Math.max(1, playerCount + delta));
+  playerCountDisplay.textContent = playerCount;
   calculateOdds();
 }
 
@@ -114,7 +209,6 @@ function getDeck() {
   return fullDeck.filter(c => !selectedCards.includes(c));
 }
 
-// fake hand evaluation — use rank sum for demo
 function evaluate(cards) {
   const values = { "2":2, "3":3, "4":4, "5":5, "6":6, "7":7, "8":8,
     "9":9, "10":10, "J":11, "Q":12, "K":13, "A":14 };
@@ -122,24 +216,22 @@ function evaluate(cards) {
 }
 
 function calculateOdds() {
-  const playerCount = parseInt(document.getElementById("playerCount").value);
   if (selectedCards.length < 2) {
     oddsText.textContent = "Select at least 2 cards.";
     return;
   }
-  if (selectedCards.length !== 2 && selectedCards.length !== 5 && selectedCards.length !== 6 && selectedCards.length !== 7) {
+  if (![2, 5, 6, 7].includes(selectedCards.length)) {
     oddsText.textContent = "Select 2, 5, 6, or 7 cards total.";
     return;
   }
 
-  // Run simple Monte Carlo simulation
   let wins = 0, ties = 0, total = 0;
   const sims = 1000;
 
   for (let i = 0; i < sims; i++) {
     const deck = getDeck().slice();
     shuffle(deck);
-    
+
     const playerHand = selectedCards.slice(0,2);
     const community = selectedCards.slice(2);
     while (community.length < 5) community.push(deck.pop());
@@ -173,6 +265,7 @@ function shuffle(arr) {
 }
 
 renderDeck();
+updateVisuals();
 </script>
 
 </body>
