@@ -1,298 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Texas Hold'em Odds Calculator</title>
+  <meta charset="UTF-8">
+  <title>Poker Hand Odds Calculator</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #eef2f3;
-      margin: 0;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
-      text-align: center;
-      color: #2b6cb0;
-    }
-
-    .section {
-      margin-bottom: 20px;
-    }
-
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(13, 1fr);
-      gap: 4px;
-    }
-
-    .card-button {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      text-align: center;
-      font-size: 14px;
-      background: #f1f1f1;
-    }
-
-    .card-button.selected {
-      background: #2b6cb0;
-      color: white;
-    }
-
-    .card-button.disabled {
-      background: #ccc;
-      pointer-events: none;
-    }
-
-    .hand-display {
-      margin-top: 10px;
-    }
-
-    .card {
-      display: inline-block;
-      margin: 4px;
-      padding: 6px 10px;
-      font-size: 18px;
-      border-radius: 6px;
-      border: 1px solid #aaa;
-    }
-
-    .red {
-      color: red;
-    }
-
-    .black {
-      color: black;
-    }
-
-    .odds {
-      font-size: 32px;
-      text-align: center;
-      color: #2b6cb0;
-      margin-top: 20px;
-    }
-
-    button {
-      padding: 10px 20px;
-      background-color: #2b6cb0;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    button.reset {
-      background-color: #e53e3e;
-      width: 100%;
-    }
-
-    .player-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .player-count {
-      font-size: 20px;
-      width: 40px;
-      text-align: center;
-    }
-
-    .arrow-button {
-      width: 30px;
-      height: 30px;
-      font-size: 20px;
-      border-radius: 4px;
-      border: none;
-      background: #ddd;
-      cursor: pointer;
-    }
+    body { font-family: sans-serif; background: #222; color: white; padding: 2rem; }
+    input, button { padding: 0.5rem; margin: 0.5rem; font-size: 1rem; }
+    .result { margin-top: 1rem; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Texas Hold'em Odds Calculator</h1>
 
-    <div class="section">
-      <h2>Your Hole Cards</h2>
-      <div id="holeCards" class="hand-display"></div>
-    </div>
+<h2>Poker Hand Odds Calculator (Texas Hold'em)</h2>
 
-    <div class="section">
-      <h2>Community Cards</h2>
-      <div id="communityCards" class="hand-display"></div>
-    </div>
+<label>Your Hand (e.g., Ah Kh):</label>
+<input id="playerHand" placeholder="e.g. Ah Kh">
+<br>
+<label>Number of Opponents:</label>
+<input id="numOpponents" type="number" min="1" max="8" value="2">
+<br>
+<button onclick="runSimulation()">Calculate Odds</button>
 
-    <div class="section">
-      <h3>Select a Card</h3>
-      <div id="cardSelector" class="card-grid"></div>
-    </div>
+<div class="result" id="output"></div>
 
-    <div class="section">
-      <h3>Number of Players</h3>
-      <div class="player-controls">
-        <button class="arrow-button" onclick="changePlayerCount(-1)">−</button>
-        <div id="playerCountDisplay" class="player-count">8</div>
-        <button class="arrow-button" onclick="changePlayerCount(1)">+</button>
-      </div>
-    </div>
+<script>
+// Basic card rank and suits
+const ranks = "23456789TJQKA".split("");
+const suits = "cdhs".split("");
 
-    <div class="odds" id="odds">Winning Odds: 0.0%</div>
+// Generate full deck
+function getDeck() {
+  const deck = [];
+  for (let r of ranks) {
+    for (let s of suits) {
+      deck.push(r + s);
+    }
+  }
+  return deck;
+}
 
-    <button class="reset" onclick="resetAll()">Reset</button>
-  </div>
+// Evaluate hand using simple scoring (better: use lib for high accuracy)
+function evaluateHand(cards) {
+  // simplified hand strength: sort by rank
+  const strength = "23456789TJQKA";
+  return cards.map(card => strength.indexOf(card[0])).sort((a, b) => b - a).join("");
+}
 
-  <script>
-    const RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
-    const SUITS = ['h','d','c','s'];
-    const SUIT_SYMBOLS = { h:'♥', d:'♦', c:'♣', s:'♠' };
-    const SUIT_COLORS = { h:'red', d:'red', c:'black', s:'black' };
+// Shuffle array
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
 
-    let selectedCards = [];
-    let holeCards = [];
-    let communityCards = [];
-    let playerCount = 8;
+// Main simulation
+function runSimulation() {
+  const handStr = document.getElementById("playerHand").value.trim().toUpperCase();
+  const playerCards = handStr.split(" ");
+  const numOpponents = parseInt(document.getElementById("numOpponents").value);
 
-    function renderCardSelector() {
-      const container = document.getElementById('cardSelector');
-      container.innerHTML = '';
+  if (playerCards.length !== 2 || playerCards.some(c => c.length !== 2)) {
+    document.getElementById("output").innerHTML = "Please enter 2 valid hole cards (e.g., Ah Kh)";
+    return;
+  }
 
-      for (let suit of SUITS) {
-        for (let rank of RANKS) {
-          const card = rank + suit;
-          const btn = document.createElement('div');
-          btn.className = 'card-button';
-          btn.textContent = rank + SUIT_SYMBOLS[suit];
-          btn.classList.add(SUIT_COLORS[suit]);
+  let wins = 0, ties = 0, total = 0;
+  const simulations = 5000;
 
-          if (selectedCards.includes(card)) {
-            btn.classList.add('disabled');
-          }
+  for (let i = 0; i < simulations; i++) {
+    let deck = getDeck();
+    // Remove player's cards
+    playerCards.forEach(c => deck.splice(deck.indexOf(c), 1));
+    shuffle(deck);
 
-          btn.onclick = () => selectCard(rank, suit, btn);
-          container.appendChild(btn);
-        }
-      }
+    const opponents = [];
+    for (let j = 0; j < numOpponents; j++) {
+      opponents.push([deck.pop(), deck.pop()]);
     }
 
-    function selectCard(rank, suit) {
-      const cardStr = rank + suit;
-      if (selectedCards.includes(cardStr)) return;
+    const community = [deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop()];
+    const playerFullHand = [...playerCards, ...community];
+    const playerScore = evaluateHand(playerFullHand);
 
-      selectedCards.push(cardStr);
-      const card = { rank, suit };
+    const oppScores = opponents.map(opp => evaluateHand([...opp, ...community]));
 
-      if (holeCards.length < 2) {
-        holeCards.push(card);
-      } else if (communityCards.length < 5) {
-        communityCards.push(card);
-      }
+    const bestOpponent = oppScores.reduce((a, b) => a > b ? a : b);
+    if (playerScore > bestOpponent) wins++;
+    else if (playerScore === bestOpponent) ties++;
+    total++;
+  }
 
-      updateDisplay();
-      renderCardSelector();
+  const output = `
+    <p>Simulated ${total} hands vs ${numOpponents} opponent(s)</p>
+    <ul>
+      <li>Win: ${(100 * wins / total).toFixed(2)}%</li>
+      <li>Tie: ${(100 * ties / total).toFixed(2)}%</li>
+      <li>Loss: ${(100 * (total - wins - ties) / total).toFixed(2)}%</li>
+    </ul>
+  `;
+  document.getElementById("output").innerHTML = output;
+}
+</script>
 
-      const totalCards = holeCards.length + communityCards.length;
-      if (
-        (holeCards.length === 2 && totalCards <= 2) ||
-        (totalCards >= 3 && totalCards <= 7)
-      ) {
-        calculateOdds();
-      }
-    }
-
-    function updateDisplay() {
-      const makeCard = (card) =>
-        `<div class="card ${SUIT_COLORS[card.suit]}">${card.rank}${SUIT_SYMBOLS[card.suit]}</div>`;
-
-      document.getElementById('holeCards').innerHTML = holeCards
-        .map(makeCard)
-        .join('');
-      document.getElementById('communityCards').innerHTML = communityCards
-        .map(makeCard)
-        .join('');
-
-      document.getElementById('playerCountDisplay').textContent = playerCount;
-    }
-
-    function resetAll() {
-      holeCards = [];
-      communityCards = [];
-      selectedCards = [];
-      updateDisplay();
-      renderCardSelector();
-      document.getElementById('odds').textContent = 'Winning Odds: 0.0%';
-    }
-
-    function changePlayerCount(change) {
-      playerCount = Math.max(1, Math.min(8, playerCount + change));
-      updateDisplay();
-      if (holeCards.length === 2) calculateOdds();
-    }
-
-    function getDeck() {
-      const deck = [];
-      for (let suit of SUITS) {
-        for (let rank of RANKS) {
-          const cardStr = rank + suit;
-          if (!selectedCards.includes(cardStr)) {
-            deck.push({ rank, suit });
-          }
-        }
-      }
-      return deck;
-    }
-
-    function calculateOdds() {
-      if (holeCards.length < 2) return;
-
-      const simulations = 200;
-      let wins = 0;
-
-      for (let i = 0; i < simulations; i++) {
-        if (simulateHand(playerCount)) wins++;
-      }
-
-      const winPercent = (wins / simulations * 100).toFixed(1);
-      document.getElementById('odds').textContent = `Winning Odds: ${winPercent}%`;
-    }
-
-    function simulateHand(players) {
-      let deck = getDeck();
-      deck.sort(() => Math.random() - 0.5);
-
-      const simCommunity = [...communityCards];
-      while (simCommunity.length < 5) {
-        simCommunity.push(deck.pop());
-      }
-
-      const opponents = [];
-      for (let i = 0; i < players - 1; i++) {
-        opponents.push([deck.pop(), deck.pop()]);
-      }
-
-      const playerScore = rankHand(holeCards, simCommunity);
-      for (let opp of opponents) {
-        if (rankHand(opp, simCommunity) > playerScore) return false;
-      }
-
-      return true;
-    }
-
-    function rankHand(hole, board) {
-      const all = [...hole, ...board];
-      const rankCount = {};
-     
+</body>
+</html>
