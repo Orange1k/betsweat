@@ -4,25 +4,10 @@
   <meta charset="UTF-8">
   <title>Poker Odds Calculator</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background: #111;
-      color: white;
-      padding: 2rem;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    #results {
-      text-align: center;
-      margin-bottom: 1rem;
-      font-size: 1.2rem;
-    }
-    .section {
-      margin-bottom: 1.5rem;
-      text-align: center;
-    }
+    body { font-family: sans-serif; background: #111; color: white; padding: 2rem; }
+    h1 { text-align: center; margin-bottom: 1rem; }
+    #results { text-align: center; margin-bottom: 1rem; font-size: 1.2rem; }
+    .section { margin-bottom: 1.5rem; text-align: center; }
     .card-slot {
       display: inline-block;
       margin: 0.2rem;
@@ -55,17 +40,11 @@
       font-size: 1.2rem;
       border-radius: 6px;
       cursor: pointer;
-      transition: background 0.2s;
     }
-    .card.selected {
-      background: olive;
-    }
+    .card.selected { background: olive; }
     .hearts, .diamonds { color: #ff4d4d; }
     .clubs, .spades { color: #4df0ff; }
-
-    .counter-controls {
-      margin-top: 0.5rem;
-    }
+    .counter-controls { margin-top: 0.5rem; }
     .counter-btn {
       padding: 0.4rem 0.8rem;
       margin: 0 0.3rem;
@@ -76,10 +55,7 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    .counter-btn:hover {
-      background: olive;
-    }
-
+    .counter-btn:hover { background: olive; }
     .reset-btn {
       margin-top: 1rem;
       padding: 0.5rem 1rem;
@@ -90,9 +66,7 @@
       border-radius: 6px;
       cursor: pointer;
     }
-    .reset-btn:hover {
-      background: darkred;
-    }
+    .reset-btn:hover { background: darkred; }
   </style>
 </head>
 <body>
@@ -131,9 +105,51 @@
 <div class="card-grid" id="cardGrid"></div>
 
 <script>
+// Poker evaluator logic (simple 7-card evaluator)
+function evaluateHand(cards) {
+  const ranks = "23456789TJQKA";
+  const suits = {};
+  const rankCount = {};
+  let flushSuit = null;
+
+  for (let c of cards) {
+    const r = c[0], s = c[1];
+    suits[s] = (suits[s] || 0) + 1;
+    rankCount[r] = (rankCount[r] || 0) + 1;
+    if (suits[s] >= 5) flushSuit = s;
+  }
+
+  const getRankVal = r => "23456789TJQKA".indexOf(r);
+  const sortedRanks = [...new Set(cards.map(c => c[0]))].sort((a,b) => getRankVal(b)-getRankVal(a));
+  if (sortedRanks.includes("A")) sortedRanks.push("1"); // Ace-low straight
+
+  const isStraight = (() => {
+    for (let i = 0; i <= sortedRanks.length - 5; i++) {
+      let slice = sortedRanks.slice(i, i+5).map(r => "A23456789TJQKA".indexOf(r));
+      if (Math.max(...slice) - Math.min(...slice) === 4 && new Set(slice).size === 5) return true;
+    }
+    return false;
+  })();
+
+  const isFlush = flushSuit !== null;
+  const isStraightFlush = isFlush && isStraight;
+
+  const values = Object.values(rankCount).sort((a,b)=>b-a);
+  if (isStraightFlush) return 9;
+  if (values[0] === 4) return 8;
+  if (values[0] === 3 && values[1] === 2) return 7;
+  if (isFlush) return 6;
+  if (isStraight) return 5;
+  if (values[0] === 3) return 4;
+  if (values[0] === 2 && values[1] === 2) return 3;
+  if (values[0] === 2) return 2;
+  return 1; // High card
+}
+
+// Main app logic
 const suits = ["♠", "♥", "♦", "♣"];
-const suitClass = ["spades", "hearts", "diamonds", "clubs"];
-const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+const suitLetters = ["s", "h", "d", "c"];
+const ranks = ["2","3","4","5","6","7","8","9","T","J","Q","K","A"];
 let selectedCards = [];
 let playerCount = 8;
 
@@ -145,15 +161,13 @@ function renderDeck() {
   cardGrid.innerHTML = "";
   suits.forEach((suit, s) => {
     ranks.forEach(rank => {
-      const card = rank + suit;
+      const card = rank + suitLetters[s];
       const div = document.createElement("div");
-      div.className = `card ${suitClass[s]}`;
+      div.className = `card ${["spades","hearts","diamonds","clubs"][s]}`;
       div.textContent = rank + suit;
-      div.dataset.card = rank + ["s", "h", "d", "c"][s];
-      div.onclick = () => toggleCard(div.dataset.card, div);
-      if (selectedCards.includes(div.dataset.card)) {
-        div.classList.add("selected");
-      }
+      div.dataset.card = card;
+      div.onclick = () => toggleCard(card, div);
+      if (selectedCards.includes(card)) div.classList.add("selected");
       cardGrid.appendChild(div);
     });
   });
@@ -180,7 +194,6 @@ function updateVisuals() {
     document.getElementById("comm4"),
     document.getElementById("comm5"),
   ];
-
   [your1, your2].forEach((el, i) => {
     if (selectedCards[i]) {
       el.textContent = formatCard(selectedCards[i]);
@@ -190,7 +203,6 @@ function updateVisuals() {
       el.classList.remove("filled");
     }
   });
-
   comm.forEach((el, i) => {
     if (selectedCards[i + 2]) {
       el.textContent = formatCard(selectedCards[i + 2]);
@@ -203,13 +215,13 @@ function updateVisuals() {
 }
 
 function formatCard(c) {
-  const rank = c.slice(0, -1);
-  const suit = { s: "♠", h: "♥", d: "♦", c: "♣" }[c.slice(-1)];
+  const rank = c[0];
+  const suit = { s:"♠", h:"♥", d:"♦", c:"♣" }[c[1]];
   return rank + suit;
 }
 
 function changePlayerCount(delta) {
-  playerCount = Math.min(8, Math.max(1, playerCount + delta));
+  playerCount = Math.max(1, Math.min(8, playerCount + delta));
   playerCountDisplay.textContent = playerCount;
   calculateOdds();
 }
@@ -221,19 +233,13 @@ function resetAll() {
 }
 
 function getDeck() {
-  const fullDeck = [];
-  for (let s of ["s", "h", "d", "c"]) {
+  const deck = [];
+  for (let s of ["s","h","d","c"]) {
     for (let r of ranks) {
-      fullDeck.push(r + s);
+      deck.push(r + s);
     }
   }
-  return fullDeck.filter(c => !selectedCards.includes(c));
-}
-
-function evaluate(cards) {
-  const values = { "2":2, "3":3, "4":4, "5":5, "6":6, "7":7, "8":8,
-    "9":9, "10":10, "J":11, "Q":12, "K":13, "A":14 };
-  return cards.map(c => values[c.slice(0, -1)]).reduce((a,b)=>a+b, 0);
+  return deck.filter(c => !selectedCards.includes(c));
 }
 
 function calculateOdds() {
@@ -241,34 +247,38 @@ function calculateOdds() {
     oddsText.textContent = "Select at least 2 cards.";
     return;
   }
-  if (![2, 5, 6, 7].includes(selectedCards.length)) {
-    oddsText.textContent = "Select 2, 5, 6, or 7 cards total.";
-    return;
-  }
 
-  let wins = 0, ties = 0, total = 0;
-  const sims = 1000;
+  const total = 1000;
+  let wins = 0, ties = 0;
 
-  for (let i = 0; i < sims; i++) {
+  for (let i = 0; i < total; i++) {
     const deck = getDeck().slice();
     shuffle(deck);
-
     const playerHand = selectedCards.slice(0,2);
-    const community = selectedCards.slice(2);
+    const knownCommunity = selectedCards.slice(2);
+    const community = [...knownCommunity];
+
     while (community.length < 5) community.push(deck.pop());
 
-    const playerScore = evaluate(playerHand.concat(community));
-    const oppScores = [];
+    const player7 = playerHand.concat(community);
+    const playerScore = evaluateHand(player7);
+
+    let bestOpp = -1;
+    let tieCount = 0;
+
     for (let j = 0; j < playerCount; j++) {
       const opp = [deck.pop(), deck.pop()];
-      const score = evaluate(opp.concat(community));
-      oppScores.push(score);
+      const score = evaluateHand(opp.concat(community));
+      if (score > bestOpp) {
+        bestOpp = score;
+        tieCount = 1;
+      } else if (score === bestOpp) {
+        tieCount++;
+      }
     }
 
-    const bestOpp = Math.max(...oppScores);
     if (playerScore > bestOpp) wins++;
     else if (playerScore === bestOpp) ties++;
-    total++;
   }
 
   const winPct = (wins / total * 100).toFixed(1);
@@ -280,7 +290,7 @@ function calculateOdds() {
 
 function shuffle(arr) {
   for (let i = arr.length-1; i > 0; i--) {
-    const j = Math.floor(Math.random()* (i+1));
+    const j = Math.floor(Math.random()*(i+1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 }
