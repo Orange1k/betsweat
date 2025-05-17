@@ -1,297 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Texas Hold'em Odds Calculator</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #eef2f3;
-            margin: 0;
-            padding: 20px;
-        }
+  <meta charset="UTF-8" />
+  <title>Texas Hold'em Odds Calculator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #eef2f3;
+      margin: 0;
+      padding: 20px;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
 
-        h1 {
-            text-align: center;
-            color: #2b6cb0;
-        }
+    h1 {
+      text-align: center;
+      color: #2b6cb0;
+    }
 
-        .section {
-            margin-bottom: 20px;
-        }
+    .section {
+      margin-bottom: 20px;
+    }
 
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(13, 1fr);
-            gap: 4px;
-        }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(13, 1fr);
+      gap: 4px;
+    }
 
-        .card-button {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            text-align: center;
-            font-size: 14px;
-            background: #f1f1f1;
-        }
+    .card-button {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      text-align: center;
+      font-size: 14px;
+      background: #f1f1f1;
+    }
 
-        .card-button.selected {
-            background: #2b6cb0;
-            color: white;
-        }
+    .card-button.selected {
+      background: #2b6cb0;
+      color: white;
+    }
 
-        .card-button.disabled {
-            background: #ccc;
-            pointer-events: none;
-        }
+    .card-button.disabled {
+      background: #ccc;
+      pointer-events: none;
+    }
 
-        .hand-display {
-            margin-top: 10px;
-        }
+    .hand-display {
+      margin-top: 10px;
+    }
 
-        .card {
-            display: inline-block;
-            margin: 4px;
-            padding: 6px 10px;
-            font-size: 18px;
-            border-radius: 6px;
-            border: 1px solid #aaa;
-        }
+    .card {
+      display: inline-block;
+      margin: 4px;
+      padding: 6px 10px;
+      font-size: 18px;
+      border-radius: 6px;
+      border: 1px solid #aaa;
+    }
 
-        .red { color: red; }
-        .black { color: black; }
+    .red {
+      color: red;
+    }
 
-        .odds {
-            font-size: 32px;
-            text-align: center;
-            color: #2b6cb0;
-            margin-top: 20px;
-        }
+    .black {
+      color: black;
+    }
 
-        button {
-            padding: 10px 20px;
-            background-color: #2b6cb0;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
+    .odds {
+      font-size: 32px;
+      text-align: center;
+      color: #2b6cb0;
+      margin-top: 20px;
+    }
 
-        button.reset {
-            background-color: #e53e3e;
-            width: 100%;
-        }
+    button {
+      padding: 10px 20px;
+      background-color: #2b6cb0;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
 
-        select {
-            padding: 6px;
-            font-size: 16px;
-            margin-left: 10px;
-        }
-    </style>
+    button.reset {
+      background-color: #e53e3e;
+      width: 100%;
+    }
+
+    .player-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .player-count {
+      font-size: 20px;
+      width: 40px;
+      text-align: center;
+    }
+
+    .arrow-button {
+      width: 30px;
+      height: 30px;
+      font-size: 20px;
+      border-radius: 4px;
+      border: none;
+      background: #ddd;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Texas Hold'em Odds Calculator</h1>
+  <div class="container">
+    <h1>Texas Hold'em Odds Calculator</h1>
 
-        <div class="section">
-            <h2>Select Your Hole Cards</h2>
-            <div id="holeCards" class="hand-display"></div>
-        </div>
-
-        <div class="section">
-            <h2>Select Community Cards</h2>
-            <div id="communityCards" class="hand-display"></div>
-        </div>
-
-        <div class="section">
-            <h3>Select a Card</h3>
-            <div id="cardSelector" class="card-grid"></div>
-        </div>
-
-        <div class="section">
-            <label for="playerCount">Number of Players:</label>
-            <select id="playerCount">
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-            </select>
-        </div>
-
-        <div class="odds" id="odds">Winning Odds: 0.0%</div>
-
-        <button onclick="calculateOdds()">Calculate Odds</button>
-        <button class="reset" onclick="resetAll()">Reset</button>
+    <div class="section">
+      <h2>Your Hole Cards</h2>
+      <div id="holeCards" class="hand-display"></div>
     </div>
 
-    <script>
-        const RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
-        const SUITS = ['h','d','c','s'];
-        const SUIT_SYMBOLS = {h:'♥', d:'♦', c:'♣', s:'♠'};
-        const SUIT_COLORS = {h:'red', d:'red', c:'black', s:'black'};
+    <div class="section">
+      <h2>Community Cards</h2>
+      <div id="communityCards" class="hand-display"></div>
+    </div>
 
-        let selectedCards = [];
-        let holeCards = [];
-        let communityCards = [];
+    <div class="section">
+      <h3>Select a Card</h3>
+      <div id="cardSelector" class="card-grid"></div>
+    </div>
 
-        function renderCardSelector() {
-            const container = document.getElementById('cardSelector');
-            container.innerHTML = '';
+    <div class="section">
+      <h3>Number of Players</h3>
+      <div class="player-controls">
+        <button class="arrow-button" onclick="changePlayerCount(-1)">−</button>
+        <div id="playerCountDisplay" class="player-count">8</div>
+        <button class="arrow-button" onclick="changePlayerCount(1)">+</button>
+      </div>
+    </div>
 
-            for (let suit of SUITS) {
-                for (let rank of RANKS) {
-                    const card = rank + suit;
-                    const btn = document.createElement('div');
-                    btn.className = 'card-button';
-                    btn.textContent = rank + SUIT_SYMBOLS[suit];
-                    btn.classList.add(SUIT_COLORS[suit]);
+    <div class="odds" id="odds">Winning Odds: 0.0%</div>
 
-                    if (selectedCards.includes(card)) {
-                        btn.classList.add('disabled');
-                    }
+    <button class="reset" onclick="resetAll()">Reset</button>
+  </div>
 
-                    btn.onclick = () => selectCard(rank, suit, btn);
-                    container.appendChild(btn);
-                }
-            }
+  <script>
+    const RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+    const SUITS = ['h','d','c','s'];
+    const SUIT_SYMBOLS = { h:'♥', d:'♦', c:'♣', s:'♠' };
+    const SUIT_COLORS = { h:'red', d:'red', c:'black', s:'black' };
+
+    let selectedCards = [];
+    let holeCards = [];
+    let communityCards = [];
+    let playerCount = 8;
+
+    function renderCardSelector() {
+      const container = document.getElementById('cardSelector');
+      container.innerHTML = '';
+
+      for (let suit of SUITS) {
+        for (let rank of RANKS) {
+          const card = rank + suit;
+          const btn = document.createElement('div');
+          btn.className = 'card-button';
+          btn.textContent = rank + SUIT_SYMBOLS[suit];
+          btn.classList.add(SUIT_COLORS[suit]);
+
+          if (selectedCards.includes(card)) {
+            btn.classList.add('disabled');
+          }
+
+          btn.onclick = () => selectCard(rank, suit, btn);
+          container.appendChild(btn);
         }
+      }
+    }
 
-        function selectCard(rank, suit, element) {
-            const card = {rank, suit};
-            const cardStr = rank + suit;
-            if (selectedCards.includes(cardStr)) return;
+    function selectCard(rank, suit) {
+      const cardStr = rank + suit;
+      if (selectedCards.includes(cardStr)) return;
 
-            selectedCards.push(cardStr);
-            if (holeCards.length < 2) {
-                holeCards.push(card);
-            } else if (communityCards.length < 5) {
-                communityCards.push(card);
-            }
+      selectedCards.push(cardStr);
+      const card = { rank, suit };
 
-            updateDisplay();
-            renderCardSelector();
+      if (holeCards.length < 2) {
+        holeCards.push(card);
+      } else if (communityCards.length < 5) {
+        communityCards.push(card);
+      }
+
+      updateDisplay();
+      renderCardSelector();
+
+      const totalCards = holeCards.length + communityCards.length;
+      if (
+        (holeCards.length === 2 && totalCards <= 2) ||
+        (totalCards >= 3 && totalCards <= 7)
+      ) {
+        calculateOdds();
+      }
+    }
+
+    function updateDisplay() {
+      const makeCard = (card) =>
+        `<div class="card ${SUIT_COLORS[card.suit]}">${card.rank}${SUIT_SYMBOLS[card.suit]}</div>`;
+
+      document.getElementById('holeCards').innerHTML = holeCards
+        .map(makeCard)
+        .join('');
+      document.getElementById('communityCards').innerHTML = communityCards
+        .map(makeCard)
+        .join('');
+
+      document.getElementById('playerCountDisplay').textContent = playerCount;
+    }
+
+    function resetAll() {
+      holeCards = [];
+      communityCards = [];
+      selectedCards = [];
+      updateDisplay();
+      renderCardSelector();
+      document.getElementById('odds').textContent = 'Winning Odds: 0.0%';
+    }
+
+    function changePlayerCount(change) {
+      playerCount = Math.max(1, Math.min(8, playerCount + change));
+      updateDisplay();
+      if (holeCards.length === 2) calculateOdds();
+    }
+
+    function getDeck() {
+      const deck = [];
+      for (let suit of SUITS) {
+        for (let rank of RANKS) {
+          const cardStr = rank + suit;
+          if (!selectedCards.includes(cardStr)) {
+            deck.push({ rank, suit });
+          }
         }
+      }
+      return deck;
+    }
 
-        function updateDisplay() {
-            const makeCard = (card) => `<div class="card ${SUIT_COLORS[card.suit]}">${card.rank}${SUIT_SYMBOLS[card.suit]}</div>`;
+    function calculateOdds() {
+      if (holeCards.length < 2) return;
 
-            document.getElementById('holeCards').innerHTML = holeCards.map(makeCard).join('');
-            document.getElementById('communityCards').innerHTML = communityCards.map(makeCard).join('');
-        }
+      const simulations = 200;
+      let wins = 0;
 
-        function resetAll() {
-            holeCards = [];
-            communityCards = [];
-            selectedCards = [];
-            updateDisplay();
-            renderCardSelector();
-            document.getElementById('odds').textContent = 'Winning Odds: 0.0%';
-        }
+      for (let i = 0; i < simulations; i++) {
+        if (simulateHand(playerCount)) wins++;
+      }
 
-        function getDeck() {
-            const deck = [];
-            for (let suit of SUITS) {
-                for (let rank of RANKS) {
-                    const cardStr = rank + suit;
-                    if (!selectedCards.includes(cardStr)) {
-                        deck.push({rank, suit});
-                    }
-                }
-            }
-            return deck;
-        }
+      const winPercent = (wins / simulations * 100).toFixed(1);
+      document.getElementById('odds').textContent = `Winning Odds: ${winPercent}%`;
+    }
 
-        function calculateOdds() {
-            if (holeCards.length < 2) {
-                alert('Please select 2 hole cards.');
-                return;
-            }
+    function simulateHand(players) {
+      let deck = getDeck();
+      deck.sort(() => Math.random() - 0.5);
 
-            const numPlayers = parseInt(document.getElementById('playerCount').value);
-            const simulations = 200;
-            let wins = 0;
+      const simCommunity = [...communityCards];
+      while (simCommunity.length < 5) {
+        simCommunity.push(deck.pop());
+      }
 
-            for (let i = 0; i < simulations; i++) {
-                if (simulateHand(numPlayers)) wins++;
-            }
+      const opponents = [];
+      for (let i = 0; i < players - 1; i++) {
+        opponents.push([deck.pop(), deck.pop()]);
+      }
 
-            const winPercent = (wins / simulations * 100).toFixed(1);
-            document.getElementById('odds').textContent = `Winning Odds: ${winPercent}%`;
-        }
+      const playerScore = rankHand(holeCards, simCommunity);
+      for (let opp of opponents) {
+        if (rankHand(opp, simCommunity) > playerScore) return false;
+      }
 
-        function simulateHand(players) {
-            let deck = getDeck();
-            const shuffle = () => deck.sort(() => Math.random() - 0.5);
-            shuffle();
+      return true;
+    }
 
-            // Community cards
-            const simCommunity = [...communityCards];
-            while (simCommunity.length < 5) {
-                simCommunity.push(deck.pop());
-            }
-
-            // Opponents
-            const opponents = [];
-            for (let i = 0; i < players - 1; i++) {
-                opponents.push([deck.pop(), deck.pop()]);
-            }
-
-            const playerScore = rankHand(holeCards, simCommunity);
-            for (let opp of opponents) {
-                if (rankHand(opp, simCommunity) > playerScore) return false;
-            }
-
-            return true;
-        }
-
-        function rankHand(hole, board) {
-            const all = [...hole, ...board];
-            const rankCount = {};
-            const suitCount = {};
-            const rankVals = all.map(c => RANKS.indexOf(c.rank)).sort((a,b)=>a-b);
-
-            for (let c of all) {
-                rankCount[c.rank] = (rankCount[c.rank] || 0) + 1;
-                suitCount[c.suit] = (suitCount[c.suit] || 0) + 1;
-            }
-
-            const counts = Object.values(rankCount).sort((a,b)=>b-a);
-            const hasFlush = Object.values(suitCount).some(v => v >= 5);
-            let hasStraight = false;
-            const uniqueRanks = [...new Set(rankVals)];
-            for (let i = 0; i <= uniqueRanks.length - 5; i++) {
-                if (uniqueRanks[i+4] - uniqueRanks[i] === 4) {
-                    hasStraight = true;
-                    break;
-                }
-            }
-
-            if (hasFlush && hasStraight) return 6;
-            if (hasFlush) return 5;
-            if (hasStraight) return 4;
-            if (counts[0] === 3) return 3;
-            if (counts[0] === 2 && counts[1] === 2) return 2;
-            if (counts[0] === 2) return 1;
-            return 0;
-        }
-
-        renderCardSelector();
-    </script>
-</body>
-</html>
+    function rankHand(hole, board) {
+      const all = [...hole, ...board];
+      const rankCount = {};
+     
