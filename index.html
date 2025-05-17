@@ -2,132 +2,178 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Clickable Poker Deck</title>
+  <title>Poker Odds Calculator</title>
   <style>
     body {
-      background: #1a1a1a;
-      color: white;
       font-family: sans-serif;
+      background: #111;
+      color: white;
       padding: 2rem;
+    }
+    h1 {
       text-align: center;
+      margin-bottom: 1rem;
     }
-
-    .suit-section {
-      margin: 1.5rem 0;
+    #results {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 1.2rem;
     }
-
+    #playerCount {
+      font-size: 1rem;
+      padding: 0.4rem;
+    }
     .card-grid {
       display: grid;
       grid-template-columns: repeat(13, 1fr);
-      gap: 0.5rem;
-      justify-items: center;
+      gap: 0.4rem;
+      max-width: 900px;
+      margin: auto;
     }
-
-    .card-btn {
-      width: 45px;
-      height: 65px;
-      border: 2px solid white;
+    .card {
       background: #333;
-      color: white;
-      font-size: 1.2rem;
-      border-radius: 8px;
+      border: 2px solid white;
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 1rem;
+      border-radius: 6px;
       cursor: pointer;
-      transition: background 0.2s ease;
+      transition: background 0.2s;
     }
-
-    .card-btn:hover {
+    .card.selected {
       background: olive;
     }
-
-    .hearts, .diamonds {
-      color: #ff4d4d;
-    }
-
-    h2 {
-      margin-bottom: 0.5rem;
-      font-size: 1.4rem;
-    }
+    .hearts, .diamonds { color: #ff4d4d; }
+    .clubs, .spades { color: #4df0ff; }
   </style>
 </head>
 <body>
 
-  <h1>Clickable Poker Deck</h1>
+<h1>Poker Odds Calculator</h1>
 
-  <div class="suit-section">
-    <h2 class="hearts">♥ Hearts</h2>
-    <div class="card-grid">
-      <button class="card-btn hearts">2♥</button>
-      <button class="card-btn hearts">3♥</button>
-      <button class="card-btn hearts">4♥</button>
-      <button class="card-btn hearts">5♥</button>
-      <button class="card-btn hearts">6♥</button>
-      <button class="card-btn hearts">7♥</button>
-      <button class="card-btn hearts">8♥</button>
-      <button class="card-btn hearts">9♥</button>
-      <button class="card-btn hearts">10♥</button>
-      <button class="card-btn hearts">J♥</button>
-      <button class="card-btn hearts">Q♥</button>
-      <button class="card-btn hearts">K♥</button>
-      <button class="card-btn hearts">A♥</button>
-    </div>
-  </div>
+<div id="results">
+  Select 2 cards to begin. <br>
+  Players: 
+  <select id="playerCount" onchange="calculateOdds()">
+    <option value="1">1 opponent</option>
+    <option value="2" selected>2 opponents</option>
+    <option value="3">3 opponents</option>
+    <option value="4">4 opponents</option>
+    <option value="5">5 opponents</option>
+    <option value="6">6 opponents</option>
+    <option value="7">7 opponents</option>
+    <option value="8">8 opponents</option>
+  </select><br><br>
+  <span id="oddsText">Waiting for input...</span>
+</div>
 
-  <div class="suit-section">
-    <h2 class="diamonds">♦ Diamonds</h2>
-    <div class="card-grid">
-      <button class="card-btn diamonds">2♦</button>
-      <button class="card-btn diamonds">3♦</button>
-      <button class="card-btn diamonds">4♦</button>
-      <button class="card-btn diamonds">5♦</button>
-      <button class="card-btn diamonds">6♦</button>
-      <button class="card-btn diamonds">7♦</button>
-      <button class="card-btn diamonds">8♦</button>
-      <button class="card-btn diamonds">9♦</button>
-      <button class="card-btn diamonds">10♦</button>
-      <button class="card-btn diamonds">J♦</button>
-      <button class="card-btn diamonds">Q♦</button>
-      <button class="card-btn diamonds">K♦</button>
-      <button class="card-btn diamonds">A♦</button>
-    </div>
-  </div>
+<div class="card-grid" id="cardGrid"></div>
 
-  <div class="suit-section">
-    <h2>♣ Clubs</h2>
-    <div class="card-grid">
-      <button class="card-btn">2♣</button>
-      <button class="card-btn">3♣</button>
-      <button class="card-btn">4♣</button>
-      <button class="card-btn">5♣</button>
-      <button class="card-btn">6♣</button>
-      <button class="card-btn">7♣</button>
-      <button class="card-btn">8♣</button>
-      <button class="card-btn">9♣</button>
-      <button class="card-btn">10♣</button>
-      <button class="card-btn">J♣</button>
-      <button class="card-btn">Q♣</button>
-      <button class="card-btn">K♣</button>
-      <button class="card-btn">A♣</button>
-    </div>
-  </div>
+<script>
+const suits = ["♠", "♥", "♦", "♣"];
+const suitClass = ["spades", "hearts", "diamonds", "clubs"];
+const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+let selectedCards = [];
 
-  <div class="suit-section">
-    <h2>♠ Spades</h2>
-    <div class="card-grid">
-      <button class="card-btn">2♠</button>
-      <button class="card-btn">3♠</button>
-      <button class="card-btn">4♠</button>
-      <button class="card-btn">5♠</button>
-      <button class="card-btn">6♠</button>
-      <button class="card-btn">7♠</button>
-      <button class="card-btn">8♠</button>
-      <button class="card-btn">9♠</button>
-      <button class="card-btn">10♠</button>
-      <button class="card-btn">J♠</button>
-      <button class="card-btn">Q♠</button>
-      <button class="card-btn">K♠</button>
-      <button class="card-btn">A♠</button>
-    </div>
-  </div>
+const cardGrid = document.getElementById("cardGrid");
+const oddsText = document.getElementById("oddsText");
+
+function renderDeck() {
+  cardGrid.innerHTML = "";
+  suits.forEach((suit, s) => {
+    ranks.forEach(rank => {
+      const card = rank + suit;
+      const div = document.createElement("div");
+      div.className = `card ${suitClass[s]}`;
+      div.textContent = card;
+      div.dataset.card = rank + ["s", "h", "d", "c"][s];
+      div.onclick = () => toggleCard(div.dataset.card, div);
+      cardGrid.appendChild(div);
+    });
+  });
+}
+
+function toggleCard(card, element) {
+  if (selectedCards.includes(card)) {
+    selectedCards = selectedCards.filter(c => c !== card);
+    element.classList.remove("selected");
+  } else if (selectedCards.length < 7) {
+    selectedCards.push(card);
+    element.classList.add("selected");
+  }
+  calculateOdds();
+}
+
+function getDeck() {
+  const fullDeck = [];
+  for (let s of ["s", "h", "d", "c"]) {
+    for (let r of ranks) {
+      fullDeck.push(r + s);
+    }
+  }
+  return fullDeck.filter(c => !selectedCards.includes(c));
+}
+
+// fake hand evaluation — use rank sum for demo
+function evaluate(cards) {
+  const values = { "2":2, "3":3, "4":4, "5":5, "6":6, "7":7, "8":8,
+    "9":9, "10":10, "J":11, "Q":12, "K":13, "A":14 };
+  return cards.map(c => values[c.slice(0, -1)]).reduce((a,b)=>a+b, 0);
+}
+
+function calculateOdds() {
+  const playerCount = parseInt(document.getElementById("playerCount").value);
+  if (selectedCards.length < 2) {
+    oddsText.textContent = "Select at least 2 cards.";
+    return;
+  }
+  if (selectedCards.length !== 2 && selectedCards.length !== 5 && selectedCards.length !== 6 && selectedCards.length !== 7) {
+    oddsText.textContent = "Select 2, 5, 6, or 7 cards total.";
+    return;
+  }
+
+  // Run simple Monte Carlo simulation
+  let wins = 0, ties = 0, total = 0;
+  const sims = 1000;
+
+  for (let i = 0; i < sims; i++) {
+    const deck = getDeck().slice();
+    shuffle(deck);
+    
+    const playerHand = selectedCards.slice(0,2);
+    const community = selectedCards.slice(2);
+    while (community.length < 5) community.push(deck.pop());
+
+    const playerScore = evaluate(playerHand.concat(community));
+    const oppScores = [];
+    for (let j = 0; j < playerCount; j++) {
+      const opp = [deck.pop(), deck.pop()];
+      const score = evaluate(opp.concat(community));
+      oppScores.push(score);
+    }
+
+    const bestOpp = Math.max(...oppScores);
+    if (playerScore > bestOpp) wins++;
+    else if (playerScore === bestOpp) ties++;
+    total++;
+  }
+
+  const winPct = (wins / total * 100).toFixed(1);
+  const tiePct = (ties / total * 100).toFixed(1);
+  const lossPct = (100 - winPct - tiePct).toFixed(1);
+
+  oddsText.textContent = `Win: ${winPct}% | Tie: ${tiePct}% | Loss: ${lossPct}%`;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()* (i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+renderDeck();
+</script>
 
 </body>
 </html>
