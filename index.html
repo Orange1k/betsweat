@@ -27,12 +27,12 @@
       display: inline-block;
       margin: 0.2rem;
       padding: 0.5rem;
-      min-width: 45px;
-      height: 65px;
+      min-width: 55px;
+      height: 70px;
       border: 2px solid #555;
       border-radius: 6px;
       background: #222;
-      font-size: 1rem;
+      font-size: 1.3rem;
       color: white;
       vertical-align: middle;
     }
@@ -50,9 +50,9 @@
     .card {
       background: #333;
       border: 2px solid white;
-      padding: 0.5rem;
+      padding: 0.6rem;
       text-align: center;
-      font-size: 1rem;
+      font-size: 1.2rem;
       border-radius: 6px;
       cursor: pointer;
       transition: background 0.2s;
@@ -79,6 +79,20 @@
     .counter-btn:hover {
       background: olive;
     }
+
+    .reset-btn {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      background: crimson;
+      border: 2px solid white;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .reset-btn:hover {
+      background: darkred;
+    }
   </style>
 </head>
 <body>
@@ -92,6 +106,7 @@
     <button class="counter-btn" onclick="changePlayerCount(1)">▲</button>
     <button class="counter-btn" onclick="changePlayerCount(-1)">▼</button>
   </div>
+  <button class="reset-btn" onclick="resetAll()">Reset</button>
 </div>
 
 <div class="section">
@@ -133,7 +148,7 @@ function renderDeck() {
       const card = rank + suit;
       const div = document.createElement("div");
       div.className = `card ${suitClass[s]}`;
-      div.textContent = card;
+      div.textContent = rank + suit;
       div.dataset.card = rank + ["s", "h", "d", "c"][s];
       div.onclick = () => toggleCard(div.dataset.card, div);
       if (selectedCards.includes(div.dataset.card)) {
@@ -197,6 +212,12 @@ function changePlayerCount(delta) {
   playerCount = Math.min(8, Math.max(1, playerCount + delta));
   playerCountDisplay.textContent = playerCount;
   calculateOdds();
+}
+
+function resetAll() {
+  selectedCards = [];
+  oddsText.textContent = "Waiting for input...";
+  updateVisuals();
 }
 
 function getDeck() {
