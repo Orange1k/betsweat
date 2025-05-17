@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Texas Hold'em Odds Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1976d2;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .card-display {
+            margin: 10px 0;
+            min-height: 50px;
+        }
+
+        .card {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 18px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .red {
+            color: red;
+        }
+
+        .black {
+            color: black;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 80px;
+        }
+
+        button {
+            padding: 8px 16px;
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        button.reset {
+            background-color: #dc004e;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .odds {
+            font-size: 32px;
+            color: #1976d2;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Texas Hold'em Odds Calculator</h1>
+        
+        <div class="section">
+            <h2>Your Hand</h2>
+            <div id="holeCards" class="card-display"></div>
+            <div class="controls" id="holeCardControls">
+                <select id="holeRank">
+                    <option value="">Select Rank</option>
+                </select>
+                <select id="holeSuit">
+                    <option value="">Select Suit</option>
+                </select>
+                <button onclick="addCard('hole')">Add Card</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Community Cards</h2>
+            <div id="communityCards" class="card-display"></div>
+            <div class="controls" id="communityCardControls">
+                <select id="communityRank">
+                    <option value="">Select Rank</option>
+                </select>
+                <select id="communitySuit">
+                    <option value="">Select Suit</option>
+                </select>
+                <button onclick="addCard('community')">Add Card</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Number of Players</h2>
+            <div class="controls">
+                <select id="playerCount" onchange="calculateOdds()">
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Winning Odds</h2>
+            <div id="odds" class="odds">0.0%</div>
+        </div>
+
+        <button class="reset" onclick="resetCards()">Reset</button>
+    </div>
+
+    <script>
+        const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+        const SUITS = ['h', 'd', 'c', 's'];
+        const SUIT_SYMBOLS = { 'h': '♥', 'd': '♦', 'c': '♣', 's': '♠' };
+        const SUIT_COLORS = { 'h': 'red', 'd': 'red', 'c': 'black', 's': 'black' };
+
+        let gameState = {
+            holeCards: [],
+            communityCards: [],
+            numberOfPlayers: 2
+        };
+
+        // Initialize rank and suit selectors
+        function initializeSelectors() {
+            const rankSelectors = ['holeRank', 'communityRank'];
+            const suitSelectors = ['holeSuit', 'communitySuit'];
+
+            rankSelectors.forEach(id => {
+                const select = document.getElementById(id);
+                select.innerHTML = '<option value="">Select Rank</option>';
+                RANKS.forEach(rank => {
+                    select.innerHTML += `<option value="${rank}">${rank}</option>`;
+                });
+            });
+
+            suitSelectors.forEach(id => {
+                const select = document.getElementById(id);
+                select.innerHTML = '<option value="">Select Suit</option>';
+                SUITS.forEach(suit => {
+                    select.innerHTML += `<option value="${suit}">${SUIT_SYMBOLS[suit]}</option>`;
+                });
+            });
+        }
+
+        function addCard(type) {
+            const rankSelect = document.getElementById(type + 'Rank');
+            const suitSelect = document.getElementById(type + 'Suit');
+            
+            if (!rankSelect.value || !suitSelect.value) return;
+
+            const card = {
+                rank: rankSelect.value,
+                suit: suitSelect.value
+            };
+
+            if (type === 'hole' && gameState.holeCards.length < 2) {
+                gameState.holeCards.push(card);
+            } else if (type === 'community' && gameState.communityCards.length < 5) {
+                gameState.communityCards.push(card);
+            }
+
+            updateDisplay();
+            calculateOdds();
+
+            // Reset selectors
+            rankSelect.value = '';
+            suitSelect.value = '';
+        }
+
+        function updateDisplay() {
+            const holeCardsDiv = document.getElementById('holeCards');
+            const communityCardsDiv = document.getElementById('communityCards');
+
+            holeCardsDiv.innerHTML = gameState.holeCards.map(card => 
+                `<div class="card ${SUIT_COLORS[card.suit]}">${card.rank}${SUIT_SYMBOLS[card.suit]}</div>`
+            ).join('');
+
+            communityCardsDiv.innerHTML = gameState.communityCards.map(card => 
+                `<div class="card ${SUIT_COLORS[card.suit]}">${card.rank}${SUIT_SYMBOLS[card.suit]}</div>`
+            ).join('');
+
+            // Update controls visibility
+            document.getElementById('holeCardControls').style.display = 
+                gameState.holeCards.length < 2 ? 'flex' : 'none';
+            document.getElementById('communityCardControls').style.display = 
+                gameState.communityCards.length < 5 ? 'flex' : 'none';
+        }
+
+        function resetCards() {
+            gameState = {
+                holeCards: [],
+                communityCards: [],
+                numberOfPlayers: parseInt(document.getElementById('playerCount').value)
+            };
+            updateDisplay();
+            document.getElementById('odds').textContent = '0.0%';
+        }
+
+        function getRemainingDeck() {
+            const usedCards = [...gameState.holeCards, ...gameState.communityCards];
+            const usedCardStrings = usedCards.map(card => card.rank + card.suit);
+            
+            const deck = [];
+            for (const rank of RANKS) {
+                for (const suit of SUITS) {
+                    const cardString = rank + suit;
+                    if (!usedCardStrings.includes(cardString)) {
+                        deck.push({ rank, suit });
+                    }
+                }
+            }
+            return deck;
+        }
+
+        function simulateHand() {
+            const remainingDeck = getRemainingDeck();
+            const remainingCommunityCards = 5 - gameState.communityCards.length;
+            
+            // Complete community cards
+            const simulatedCommunityCards = [...gameState.communityCards];
+            for (let i = 0; i < remainingCommunityCards; i++) {
+                const randomIndex = Math.floor(Math.random() * remainingDeck.length);
+                simulatedCommunityCards.push(remainingDeck[randomIndex]);
+                remainingDeck.splice(randomIndex, 1);
+            }
+
+            // Generate opponent hands
+            const opponentHands = [];
+            for (let i = 0; i < gameState.numberOfPlayers - 1; i++) {
+                const hand = [];
+                for (let j = 0; j < 2; j++) {
+                    const randomIndex = Math.floor(Math.random() * remainingDeck.length);
+                    hand.push(remainingDeck[randomIndex]);
+                    remainingDeck.splice(randomIndex, 1);
+                }
+                opponentHands.push(hand);
+            }
+
+            // Simple hand ranking (this is a simplified version)
+            function rankHand(holeCards, communityCards) {
+                const allCards = [...holeCards, ...communityCards];
+                // This is a very simplified ranking system
+                // In a real implementation, you'd want to use proper poker hand evaluation
+                return Math.max(...allCards.map(card => RANKS.indexOf(card.rank)));
+            }
+
+            const playerRank = rankHand(gameState.holeCards, simulatedCommunityCards);
+            const opponentRanks = opponentHands.map(hand => 
+                rankHand(hand, simulatedCommunityCards)
+            );
+
+            return !opponentRanks.some(rank => rank > playerRank);
+        }
+
+        function calculateOdds() {
+            if (gameState.holeCards.length !== 2) {
+                document.getElementById('odds').textContent = '0.0%';
+                return;
+            }
+
+            const SIMULATION_COUNT = 1000;
+            let wins = 0;
+
+            for (let i = 0; i < SIMULATION_COUNT; i++) {
+                if (simulateHand()) {
+                    wins++;
+                }
+            }
+
+            const winProbability = (wins / SIMULATION_COUNT * 100).toFixed(1);
+            document.getElementById('odds').textContent = winProbability + '%';
+        }
+
+        // Initialize the page
+        initializeSelectors();
+        updateDisplay();
+    </script>
+</body>
+</html> 
